@@ -1,0 +1,8 @@
+google-api-python-client
+pandas
+textblob
+transformers
+torch
+scipy
+numpy
+jupyterlab
