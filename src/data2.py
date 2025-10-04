@@ -6,9 +6,9 @@ import os
 CLIENT_ID = "tfWEwTSTTSr0WbBpfjEBgw"
 CLIENT_SECRET = "q0c7NUTsgR4zQ_RM8TwZln9kNU1DOw"
 USER_AGENT = "TataHarrierSentimentBot"
-SUBREDDITS = ["tata safari" ,"TataMotors", "cars", "CarsIndia", "CarTalk", "AutoIndia", "tata harrier"]
+SUBREDDITS = ["Tata_Safari" ,"TataMotors", "cars", "IndiaCars","CarReviewsIndia","SUVIndia","IndianRoadTrips", "CarsIndia", "CarTalk", "AutoIndia", "Tata_Harrier"]
 KEYWORDS = ["harrier", "safari"]
-OUTPUT_CSV = "data/reddit_harrier_safari_posts_comments.csv"
+OUTPUT_CSV = "data/reddit_comments.csv"
 
 # --- Initialize PRAW ---
 reddit = praw.Reddit(

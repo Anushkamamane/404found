@@ -1,76 +1,56 @@
 import pandas as pd
-from collections import Counter
-import re
+from textblob import TextBlob
+from nrclex import NRCLex
 
-# Load CSV with at least a 'comment' and 'sentiment' (optional: 'translated_comment') column
-df = pd.read_csv("notebooks/data/reddit_comments_sentiment.csv")
+df = pd.read_csv("notebooks/data/comments.csv")
+print("Columns in CSV:", df.columns.tolist())  # DEBUG: see available columns
 
-def most_common_words(comments, top_n=10):
-    all_words = []
-    stopwords = set([
-        'the','and','a','an','in','is','it','of','for','to','i','so','very',
-        'with','this','that','on','its','but','at','as','are','be','my','you'
-    ])
-    for comment in comments:
-        words = re.findall(r'\b\w+\b', str(comment).lower())
-        filtered_words = [w for w in words if w not in stopwords]
-        all_words.extend(filtered_words)
-    return Counter(all_words).most_common(top_n)
+# Find your actual comment text column
+COMMENT_COL = None
+for col in ["comment", "text", "message", "body"]:
+    if col in df.columns:
+        COMMENT_COL = col
+        break
+if COMMENT_COL is None:
+    raise Exception("No text/comment column found in CSV. Columns present: " + str(df.columns.tolist()))
 
-def sentiment_analysis_over_keyword(df, keyword):
-    # Filter for comments mentioning the keyword (in comment or translated_comment)
-    contains_keyword = df['comment'].str.contains(keyword, case=False, na=False)
-    if 'translated_comment' in df.columns:
-        contains_keyword = contains_keyword | df['translated_comment'].str.contains(keyword, case=False, na=False)
-    filtered_df = df[contains_keyword]
+KEYWORDS = ["safari", "harrier"]
 
-    pos = filtered_df[filtered_df['sentiment'] == "Positive"]['comment'].tolist()
-    neg = filtered_df[filtered_df['sentiment'] == "Negative"]['comment'].tolist()
-    neu = filtered_df[filtered_df['sentiment'] == "Neutral"]['comment'].tolist()
-    total = len(filtered_df)
-    pos_percent = (len(pos) / total) * 100 if total else 0
-    neg_percent = (len(neg) / total) * 100 if total else 0
-    neu_percent = (len(neu) / total) * 100 if total else 0
+# Filter for Tata Safari/Harrier comments (also check translated column if present)
+mask = df[COMMENT_COL].str.contains('|'.join(KEYWORDS), case=False, na=False)
+if "translated_comment" in df.columns:
+    mask = mask | df["translated_comment"].str.contains('|'.join(KEYWORDS), case=False, na=False)
+filtered = df[mask].copy()
 
-    return {
-        "comments": filtered_df['comment'].tolist(),
-        "positive_comments": pos,
-        "negative_comments": neg,
-        "neutral_comments": neu,
-        "positive_percent": pos_percent,
-        "negative_percent": neg_percent,
-        "neutral_percent": neu_percent,
-        "total": total
-    }
+# Sentiment analysis only
+def sentiment(text):
+    polarity = TextBlob(str(text)).sentiment.polarity
+    if polarity > 0.1:
+        sentiment_value = "Positive"
+    elif polarity < -0.1:
+        sentiment_value = "Negative"
+    else:
+        sentiment_value = "Neutral"
+    return sentiment_value
 
-# Analyze Safari
-safari_sentiment = sentiment_analysis_over_keyword(df, "safari")
-print("===== Tata Motors Safari Sentiment Analysis =====")
-print(f"Total Comments: {safari_sentiment['total']}")
-print(f"Positive: {len(safari_sentiment['positive_comments'])} ({safari_sentiment['positive_percent']:.2f}%)")
-print(f"Negative: {len(safari_sentiment['negative_comments'])} ({safari_sentiment['negative_percent']:.2f}%)")
-print(f"Neutral : {len(safari_sentiment['neutral_comments'])} ({safari_sentiment['neutral_percent']:.2f}%)\n")
-print("Sample Positive Comments (Safari):")
-for c in safari_sentiment['positive_comments'][:5]:
-    print("-", c)
-print("\nSample Negative Comments (Safari):")
-for c in safari_sentiment['negative_comments'][:5]:
-    print("-", c)
-print("\nMost Common Positive Words (Safari):")
-print(most_common_words(safari_sentiment['positive_comments']))
+filtered['sentiment'] = filtered[COMMENT_COL].map(sentiment)
+filtered.to_csv("comments_sentiment_analysis.csv", index=False)
 
-# Analyze Harrier
-harrier_sentiment = sentiment_analysis_over_keyword(df, "harrier")
-print("\n===== Tata Motors Harrier Sentiment Analysis =====")
-print(f"Total Comments: {harrier_sentiment['total']}")
-print(f"Positive: {len(harrier_sentiment['positive_comments'])} ({harrier_sentiment['positive_percent']:.2f}%)")
-print(f"Negative: {len(harrier_sentiment['negative_comments'])} ({harrier_sentiment['negative_percent']:.2f}%)")
-print(f"Neutral : {len(harrier_sentiment['neutral_comments'])} ({harrier_sentiment['neutral_percent']:.2f}%)\n")
-print("Sample Positive Comments (Harrier):")
-for c in harrier_sentiment['positive_comments'][:5]:
-    print("-", c)
-print("\nSample Negative Comments (Harrier):")
-for c in harrier_sentiment['negative_comments'][:5]:
-    print("-", c)
-print("\nMost Common Positive Words (Harrier):")
-print(most_common_words(harrier_sentiment['positive_comments']))
+# NRC emotions full scores into a new DataFrame
+emotion_rows = []
+emotion_categories = ['fear', 'anger', 'anticipation', 'trust', 'surprise', 'positive', 'negative', 'sadness', 'disgust', 'joy']
+for idx, row in filtered.iterrows():
+    text = row[COMMENT_COL]
+    nrc = NRCLex(str(text))
+    scores = nrc.raw_emotion_scores
+    total = sum(scores.values()) if scores else 1
+    norm_scores = {emo: scores.get(emo, 0) / total if total > 0 else 0 for emo in emotion_categories}
+    out_row = {'index': idx, COMMENT_COL: text}
+    out_row.update(norm_scores)
+    emotion_rows.append(out_row)
+
+emotions_df = pd.DataFrame(emotion_rows)
+emotions_df.to_csv("comments_emotion_analysis.csv", index=False)
+
+print("\nSentiment analysis saved to: comments_sentiment_analysis.csv")
+print("Full NRC emotion scores saved to: comments_emotion_analysis.csv")
