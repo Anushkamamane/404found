@@ -39,25 +39,37 @@ st.markdown("### 📊 Select a Platform")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.image("notebooks/data/yt.png", width=70)
-    st.markdown(
-        "<div style='text-align:center; font-size:18px; font-weight:600;'>YouTube</div>",
-        unsafe_allow_html=True,
-    )
+    img_col, txt_col = st.columns([1, 2])
+    with img_col:
+        st.image("notebooks/data/yt.png", width=70)
+    with txt_col:
+        st.markdown(
+            "<div style='display:flex;align-items:center;height:70px;'>"
+            "<span style='font-size:20px;font-weight:600;text-align:left;margin-left:8px;'>YouTube</span>"
+            "</div>", unsafe_allow_html=True
+        )
 
 with col2:
-    st.image("notebooks/data/reddit.png", width=70)
-    st.markdown(
-        "<div style='text-align:center; font-size:18px; font-weight:600;'>Reddit</div>",
-        unsafe_allow_html=True,
-    )
+    img_col, txt_col = st.columns([1, 2])
+    with img_col:
+        st.image("notebooks/data/reddit.png", width=70)
+    with txt_col:
+        st.markdown(
+            "<div style='display:flex;align-items:center;height:70px;'>"
+            "<span style='font-size:20px;font-weight:600;text-align:left;margin-left:8px;'>Reddit</span>"
+            "</div>", unsafe_allow_html=True
+        )
 
 with col3:
-    st.image("notebooks/data/tele.png", width=70)
-    st.markdown(
-        "<div style='text-align:center; font-size:18px; font-weight:600;'>Telegram</div>",
-        unsafe_allow_html=True,
-    )
+    img_col, txt_col = st.columns([1, 2])
+    with img_col:
+        st.image("notebooks/data/tele.png", width=70)
+    with txt_col:
+        st.markdown(
+            "<div style='display:flex;align-items:center;height:70px;'>"
+            "<span style='font-size:20px;font-weight:600;text-align:left;margin-left:8px;'>Telegram</span>"
+            "</div>", unsafe_allow_html=True
+        )
 
 st.markdown("<br>", unsafe_allow_html=True)
 
